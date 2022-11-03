@@ -66,7 +66,7 @@ void normalize(Mat &inframe) {
 }
 
 // Function to process a raw (corrected) seek frame
-void process_frame(Mat &inframe, Mat &outframe, float scale, int colormap, int rotate) {
+void process_frame(Mat &inframe, Mat &outframe, float scale, int colormap, int rotate, Mat &custmap) {
     Mat frame_g8; // Transient Mat containers for processing
 
     normalize(inframe);
@@ -93,7 +93,7 @@ void process_frame(Mat &inframe, Mat &outframe, float scale, int colormap, int r
 
     // Apply colormap: http://docs.opencv.org/3.2.0/d3/d50/group__imgproc__colormap.html#ga9a805d8262bcbe273f16be9ea2055a65
     if (colormap != -1) {
-        applyColorMap(frame_g8, outframe, colormap);
+        applyColorMap(frame_g8, outframe, custmap);
     } else {
         cv::cvtColor(frame_g8, outframe, cv::COLOR_GRAY2BGR);
     }
@@ -182,6 +182,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> _mode(parser, "mode", "The mode to use - v4l2, window, file", {'m', "mode"});
     args::ValueFlag<std::string> _output(parser, "output", "Name of the file or video device to write to", {'o', "output"});
     args::ValueFlag<std::string> _ffc(parser, "FFC", "Additional Flat Field calibration - provide ffc file", {'F', "FFC"});
+    args::ValueFlag<std::string> _imagemap(parser, "imagemap", "Custom Color Map as 1x256pixel image - provide png file", {'i', "imagemap"});
     args::ValueFlag<int> _fps(parser, "fps", "Video Output FPS - Kludge factor", {'f', "fps"});
     args::ValueFlag<float> _scale(parser, "scaling", "Output Scaling - multiple of original image", {'s', "scale"});
     args::ValueFlag<int> _colormap(parser, "colormap", "Color Map - number between 0 and 21 (see: cv::ColormapTypes for maps available in your version of OpenCV)", { 'c', "colormap" });
@@ -206,6 +207,28 @@ int main(int argc, char** argv) {
         std::cerr << parser;
         return 1;
     }
+    
+    cv::Mat _customMap;
+    
+    if (_imagemap) {
+        cv::Mat foo = cv::imread(_imagemap);
+        cv::Mat lutRND(256, 1, CV_8UC3);
+        uint8_t* pixelPtr = (uint8_t*)foo.data;
+        int cn = foo.channels();
+        cv::Scalar_<uint8_t> bgrPixel;
+        for(int i = 0; i < foo.rows; i++)
+        {
+            for(int j = 0; j < foo.cols; j++)
+            {
+                bgrPixel.val[0] = pixelPtr[i*foo.cols*cn + j*cn + 0]; // B
+                bgrPixel.val[1] = pixelPtr[i*foo.cols*cn + j*cn + 1]; // G
+                bgrPixel.val[2] = pixelPtr[i*foo.cols*cn + j*cn + 2]; // R
+                lutRND.row(i) = bgrPixel;
+            }
+        }
+        _customMap = lutRND;
+    }
+    
     
     float scale = 1.0;
     if (_scale)
