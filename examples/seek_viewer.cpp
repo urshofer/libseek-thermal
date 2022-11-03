@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
     cv::Mat _customMap;
     
     if (_imagemap) {
-        cv::Mat foo = cv::imread(_imagemap);
+        cv::Mat foo = cv::imread(args::get(_imagemap));
         cv::Mat lutRND(256, 1, CV_8UC3);
         uint8_t* pixelPtr = (uint8_t*)foo.data;
         int cn = foo.channels();
