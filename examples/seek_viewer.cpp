@@ -301,7 +301,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    process_frame(seekframe, outframe, scale, colormap, rotate);
+    process_frame(seekframe, outframe, scale, colormap, rotate, _customMap);
 
     // Setup video for linux if that output is chosen
     int v4l2 = -1;
@@ -340,7 +340,7 @@ int main(int argc, char** argv) {
         }
 
         // Retrieve frame from seek and process
-        process_frame(seekframe, outframe, scale, colormap, rotate);
+        process_frame(seekframe, outframe, scale, colormap, rotate, _customMap);
 
         if (mode == "v4l2") {
             v4l2_out(v4l2, outframe);
