@@ -237,7 +237,8 @@ void SeekCam::create_dead_pixel_list(cv::Mat frame, cv::Mat& dead_pixel_mask,
     hist.at<float>(0, 0) = 0;       /* suppres 0th bin since its usual the highest,
                                     but we don't want this one */
     cv::minMaxLoc(hist, nullptr, nullptr, nullptr, &hist_max_value);
-    const double threshold = hist_max_value.y - (max_value - hist_max_value.y);
+    // const double threshold = hist_max_value.y - (max_value - hist_max_value.y);
+    const double threshold = hist_max_value.y - (max_value - hist_max_value.y*0.9);
 
     /* calculate the dead pixels mask */
     cv::threshold(tmp, tmp, threshold, 255, cv::THRESH_BINARY);
