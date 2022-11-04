@@ -66,7 +66,7 @@ void normalize(Mat &inframe) {
 }
 
 // Function to process a raw (corrected) seek frame
-void process_frame(Mat &inframe, Mat &outframe, float scale, int colormap, int rotate, Mat &custmap) {
+void process_frame(Mat &inframe, Mat &outframe, float scale, int colormap, int rotate, Mat &custmap, bool custmapLoaded) {
     Mat frame_g8; // Transient Mat containers for processing
 
     normalize(inframe);
@@ -92,10 +92,14 @@ void process_frame(Mat &inframe, Mat &outframe, float scale, int colormap, int r
     }
 
     // Apply colormap: http://docs.opencv.org/3.2.0/d3/d50/group__imgproc__colormap.html#ga9a805d8262bcbe273f16be9ea2055a65
-    if (colormap != -1) {
+    if (custmapLoaded == true) {
         applyColorMap(frame_g8, outframe, custmap);
     } else {
-        cv::cvtColor(frame_g8, outframe, cv::COLOR_GRAY2BGR);
+        if (colormap != -1) {
+            applyColorMap(frame_g8, outframe, colormap);
+        } else {
+            cv::cvtColor(frame_g8, outframe, cv::COLOR_GRAY2BGR);
+        }
     }
 }
 
@@ -209,7 +213,7 @@ int main(int argc, char** argv) {
     }
     
     cv::Mat _customMap;
-    
+    bool _customMapLoaded;
     if (_imagemap) {
         cv::Mat foo = cv::imread(args::get(_imagemap));
         cv::Mat lutRND(256, 1, CV_8UC3);
@@ -227,6 +231,9 @@ int main(int argc, char** argv) {
             }
         }
         _customMap = lutRND;
+        _customMapLoaded = true;
+    } else {
+        _customMapLoaded = false;
     }
     
     
@@ -301,7 +308,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    process_frame(seekframe, outframe, scale, colormap, rotate, _customMap);
+    process_frame(seekframe, outframe, scale, colormap, rotate, _customMap, _customMapLoaded);
 
     // Setup video for linux if that output is chosen
     int v4l2 = -1;
@@ -340,7 +347,7 @@ int main(int argc, char** argv) {
         }
 
         // Retrieve frame from seek and process
-        process_frame(seekframe, outframe, scale, colormap, rotate, _customMap);
+        process_frame(seekframe, outframe, scale, colormap, rotate, _customMap, _customMapLoaded);
 
         if (mode == "v4l2") {
             v4l2_out(v4l2, outframe);
